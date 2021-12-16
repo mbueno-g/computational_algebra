@@ -55,11 +55,14 @@ def pol_multiplicar_karatsuba(a, b, p):
         prod = c0[:n//2] + c1[:n//2] + c2
     return prod 
 
+def pol_multiplicar_escalar(a, k, p):
+    return [(k*pol_coef(a,i))%p for i in range(len(a))]
+
 def negaconv(a,b,p):
 	n = len(a)
 	if len(b) != n:
 		print(...)
-	c=[0]*n
+	c = [0 for i in range(n)]
 	for i in range(n):
 		signo=1
 		for j in range(n):
@@ -69,56 +72,77 @@ def negaconv(a,b,p):
 	return c
 	
 def shift(fi,i):
-	fi_shift=[0]*(len(fi))
+	fi_shift = [0 for i in range(len(fi))]
 	for j in range(0,len(fi)):
 		fi_shift[(j+i)%(len(fi))]=(pow(-1,(j+i)//(len(fi))))*fi[j]
 	return fi_shift	
 
 def beta(f_tilde,xi):
-	beta_f=[[0]*len(f_tilde[0])]*len(f_tilde)
+	beta_f = [[0 for i in range(len(f_tilde[0]))] for j in range(len(f_tilde))]
 	for j in range (len(f_tilde)):
 		beta_f[j]=shift(f_tilde[j],xi*j) 
 	return beta_f
 
-def beta_i(f_tilde,xi):
-	beta_f=[[0]*len(f_tilde[0])]*len(f_tilde)
+def beta_i(f_tilde,xi,n2):
+	beta_f = [[0 for i in range(len(f_tilde[0]))] for j in range(len(f_tilde))]
 	for j in range (len(f_tilde)):
-		beta_f[j]=shift(f_tilde[j],xi-j) 
+		beta_f[j]=shift(f_tilde[j],xi*(2*n2-j)) 
 	return beta_f
 
 def mult_ss_mod(f,g,k,p):
 	if(k <=2):
 		w = negaconv(f,g,p)
-		return quitar_ceros(w)
+		return w
 	else:
-		k1=math.floor(k//2)
+		k1=k//2
 		k2=k-k1
 		n1=2**k1
 		n2=2**k2
-		f1=[[0]*n1]*n2
-		g1=[[0]*n1]*n2
-		f_tilde=[[0]*(2*n1)]*n2
-		g_tilde=[[0]*(2*n1)]*n2
+		f1 = [[0 for i in range(n1)] for j in range(n2)]
+		g1 = [[0 for i in range(n1)] for j in range(n2)]
+		f_tilde = [[0 for i in range(2*n1)] for j in range(n2)]
+		g_tilde = [[0 for i in range(2*n1)] for j in range(n2)]
 		for i in range(n2):
 			f1[i]=f[i * n1:(i + 1) * n1]
 			g1[i]=g[i * n1:(i + 1) * n1]
 			f_tilde[i]=f1[i]+[0]*n1
 			g_tilde[i]=g1[i]+[0]*n1
-		beta_f_tilde=beta(f_tilde,1)
-		beta_g_tilde=beta(g_tilde,1)
-		print(beta_f_tilde,beta_g_tilde)
+		beta_f_tilde=beta(f_tilde,2*n1//n2)
+		beta_g_tilde=beta(g_tilde,2*n1//n2)
 		fft_b_f_tilde=fft(beta_f_tilde, 4*n1//n2,p)
 		fft_b_g_tilde=fft(beta_g_tilde, 4*n1//n2,p)
-		print(fft_b_f_tilde,fft_b_g_tilde)
 		h=[]
 		for i in range(n2):
 			h += [mult_ss_mod(fft_b_f_tilde[i],fft_b_g_tilde[i],1+k1,p)]
-		h2 = fft(h,4*(n1//n2)*(n2-1),p)
-		h1=beta_i(h2,2*n2)
-		h=beta(h1,n1)
-		res=[0]*2*n1
+		#PRUEBA
+		print("PRUEBA1-------------------------------------------")
+		qq= fft(h,(4*n1)//n2,p)
+		qqi= fft(qq,((4*n1)//n2)*(n2-1),p)
 		for i in range(n2):
-			res=pol_sumar(res,h[i],p)
+			qqi[i]=pol_multiplicar_escalar(qqi[i], n2**(p-2), p)
+		print("qq", qq, "qqi", qqi)
+		print("h", h)
+		print("bien??", h==qqi)
+		print("--------------------------------------------------")
+		h2 = fft(h,4*(n1//n2)*(n2-1),p)
+		for i in range(n2):
+			h2[i]=pol_multiplicar_escalar(h2[i], n2**(p-2), p)
+		#PRUEBA	
+		print("PRUEBA2-------------------------------------------")
+		r = beta(h2, 2*n1//n2)
+		ri = beta_i(r, 2*n1//n2,n2)
+		print("h2", h2, "r", r, "ri", ri)
+		print("bien??", ri==h2)
+		print("--------------------------------------------------")
+		h1=beta_i(h2,2*n1//n2, n2)
+		print("h1", h1)
+		h=beta(h1,n1)
+		print("h", h)
+		res = [0 for i in range(4*n1)]
+		for i in range(n2):
+			#print("res", res,"hi", h[i])
+			res = pol_sumar(res,h[i],p)
+			#print("res1", res)
 		return quitar_ceros(res)
 		
 
@@ -132,8 +156,9 @@ def mult_pol_mod(f,g,p):
 	deg_g = len(g)-1
 	while(deg_f + deg_g >= pow(2,k)):
 		k += 1
-	f+=[0]*(2**k-len(f))
-	g+=[0]*(2**k-len(g))
+	print(k)
+	f+=[0 for i in range(2**k-len(f))]
+	g+=[0 for i in range(2**k-len(g))]
 	return mult_ss_mod(f,g,k,p)
 
 #shift dei coefficienti per la radice dell'unità (ricorda di cambiare di segno)
@@ -144,21 +169,24 @@ def fft(f, xi,p): #stiamo passando 4*n1/n2 come xi
 	n = len(f) 
 	if n == 1:
 		return f
-	f_even = [[0] * len(f[0])]*(n//2)
-	f_odd = [[0] * len(f[0])]*(n//2)
+	f_even = [[0 for i in range(len(f[0]))] for j in range(n//2)]
+	f_odd = [[0 for i in range(len(f[0]))] for j in range(n//2)]
 	for i in range(n//2):
 		f_even[i] = f[2*i]
 		f_odd[i] = f[2*i+1] 
-	a_even = fft(f_even, xi**2,p) 
-	a_odd = fft(f_odd, xi**2,p)
-	a = [[0] * len(f[0])]*n
+	a_even = fft(f_even, xi*2,p) 
+	a_odd = fft(f_odd, xi*2,p)
+	a = [[0 for i in range(len(f[0]))] for j in range(n)]
 	for i in range(n//2):
-		a[i] = pol_sumar(a_even[i],shift(a_odd[i],2*i*xi),p) #non possiamo farlo così
+		a[i] = pol_sumar(a_even[i],shift(a_odd[i],xi*i),p) #non possiamo farlo così
+		#a[i + n//2] = pol_sumar(a_even[i],shift(a_odd[i],xi*(i+len(f[0]))),p)
+		a[i + n//2] = pol_restar(a_even[i],shift(a_odd[i],xi*i),p)
 		#chiamiamo ricorsivamente mult_ss_mod con k=1+k1 (n1=2^k1.. 2n1=2^(k1+1))
 		#si k<2 negaconvolucion che sarebbe moltiplicare normalmente e cambiare di segno
+	#print("a",a )
 	return a
 	
 #print(mult_pol_mod([1,2,3],[4,5],7))
 #print(mult_pol_mod([1, 0], [3, 0], 7))
-print(mult_pol_mod([4, 5, 1, 0, 0, 0, 0, 0, 0], [3, 4, 4, 0, 0, 0, 0, 0, 0], 7))
-#[5, 3, 4, 3, 4]
+#print(mult_pol_mod([4, 5, 1, 0, 0, 0, 0, 0, 0], [3, 4, 4, 0, 0, 0, 0, 0, 0], 7))#[5, 3, 4, 3, 4]
+print(mult_pol_mod([3, 0, 1], [1, 5, 5], 7)) #h1 [3, 1, 2, 5, 5]
