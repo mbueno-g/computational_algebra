@@ -66,15 +66,15 @@ for d in range(200):
    try:
       signal.alarm(2)
       h2 = act.mult_pol_mod(f,g,p)
-      print("h2",h2)
-      print("h1",h1)
       signal.alarm(0)
       if h1 != h2:
-         print("test1: error!  222")
-         print("mult_pol_mod(" + str(f) + ", " + str(g) + ", " + str(p) + ")")
-         sys.exit(1)
+        print("XXX", h1)
+        print("MIO", h2)
+        print("test1: error! 111")
+        print("mult_pol_mod(" + str(f) + ", " + str(g) + ", " + str(p) + ")")
+        sys.exit(1)
    except Exception as e:
-      print("test1: error! 333")
+      print("test1: error! 222")
       print("exception: " + str(e))
       sys.exit(1)
 print("test1: passed!")
