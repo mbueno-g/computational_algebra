@@ -1,3 +1,14 @@
+'''    
+AUTHOR       : MARINA BUENO GARCÍA
+EMAIL        : marinbue@ucm.es
+EXERCISE     : 10.7
+CLASS        : ALCP1
+DESCRIPTION  : Schonhage-Strassen algorithm
+Implementar la función mult_pol_mod(f,g,p) que tome un primo p != 2 y dos polinomios f,g ∈ (Z/pZ)[x], 
+representados por la lista de sus coeficientes, y que calcule su producto. Para esto, implementar una función recursiva 
+mult_ss_mod(f,g,k,p) que tome [f],[g] ∈ (Z/pZ)[x]/<x^(2^k)+1> y calcule su producto aplicando el método de Schonhage-Strassen.
+'''
+
 import random as rnd
 import numpy as np
 import math as math
@@ -107,33 +118,23 @@ def mult_ss_mod(f,g,k,p):
 			g1[i]=g[i * n1:((i + 1) * n1)]
 			f_tilde[i]=f1[i]+[0]*n1
 			g_tilde[i]=g1[i]+[0]*n1
-		#print(f_tilde)
 		beta_f_tilde=beta(f_tilde,(2*n1)//n2)
 		beta_g_tilde=beta(g_tilde,(2*n1)//n2)
-		#print(beta_f_tilde)
 		fft_b_f_tilde = fft(beta_f_tilde, (4*n1)//n2,p)
 		fft_b_g_tilde = fft(beta_g_tilde, (4*n1)//n2,p)
-		#print(fft_b_f_tilde)
 		h=[]
 		for i in range(n2):
 			h += [mult_ss_mod(fft_b_f_tilde[i],fft_b_g_tilde[i],1+k1,p)]
-		#print("h", h)
 		h2 = fft(h,((4*n1)//n2)*(n2-1),p)
 		for i in range(n2):
 			h2[i]=pol_multiplicar_escalar(h2[i], n2**(p-2), p)
-		#print("h2", h2)
 		h1=beta_i(h2,(2*n1)//n2, n2)
-		#print(h1)
 		for s in range(0,len(h1)):
 			h1[s] += [0 for j in range(0,pow(2,k)-(2*n1))]
-		#print("h1",h1)
 		h=beta(h1,n1)
-		#print(h)
-		#print("len h", len(h[0]), 4*n1)
 		res = [0 for i in range(4*n1)]
 		for i in range(n2):
 			res = pol_sumar(res,h[i],p)
-		#print("res", res)
 		return quitar_ceros(res)
 		
 
@@ -141,7 +142,7 @@ def mult_pol_mod(f,g,p):
 	f = quitar_ceros(f)
 	g = quitar_ceros(g)
 	if(p==2):
-		return ("Errore: numero primo introducido debe ser distinto de 2")
+		return ("Error: número primo introducido debe ser distinto de 2")
 	k=0
 	deg_f = len(f)-1
 	deg_g = len(g)-1
@@ -149,14 +150,9 @@ def mult_pol_mod(f,g,p):
 		k += 1
 	f+=[0 for i in range(pow(2,k)-len(f))]
 	g+=[0 for i in range(pow(2,k)-len(g))]
-	print("k", k)
 	return mult_ss_mod(f,g,k,p)
 
-#shift dei coefficienti per la radice dell'unità (ricorda di cambiare di segno)
-
-# algoritmo de Cooley-Tuckey para calcular DFT_n(p)
-# n = len(p) debe ser una potencia de 2 y xi debe ser # una raız n-esima primitiva de la unidad
-def fft(f, xi,p): #stiamo passando 4*n1/n2 come xi
+def fft(f, xi,p): 
 	n = len(f) 
 	if n == 1:
 		return f
@@ -169,21 +165,6 @@ def fft(f, xi,p): #stiamo passando 4*n1/n2 come xi
 	a_odd = fft(f_odd, xi*2,p)
 	a = [[0 for i in range(len(f[0]))] for j in range(n)]
 	for i in range(n//2):
-		a[i] = pol_sumar(a_even[i],shift(a_odd[i],xi*i),p) #non possiamo farlo così
-		#a[i + n//2] = pol_sumar(a_even[i],shift(a_odd[i],xi*(i+len(f[0]))),p)
+		a[i] = pol_sumar(a_even[i],shift(a_odd[i],xi*i),p)
 		a[i + (n//2)] = pol_restar(a_even[i],shift(a_odd[i],xi*i),p)
-		#chiamiamo ricorsivamente mult_ss_mod con k=1+k1 (n1=2^k1.. 2n1=2^(k1+1))
-		#si k<2 negaconvolucion che sarebbe moltiplicare normalmente e cambiare di segno
-	#print("a",a )
 	return a
-	
-#print(mult_pol_mod([1,2,3],[4,5],7))
-#print(mult_pol_mod([1, 0], [3, 0], 7))
-#print(mult_ss_mod([1,1,1,1,1,0,0,0], [1,1,1,1,1,0,0,0],3, 7))
-#print(mult_ss_mod([1,2,3,4], [4,5,6,6], 2, 7) )
-#print(mult_pol_mod([4, 5, 1, 0, 0, 0, 0, 0, 0], [3, 4, 4, 0, 0, 0, 0, 0, 0], 7))#[5, 3, 4, 3, 4]
-#print(mult_pol_mod([3, 0, 1], [1, 5, 5], 7)) #h1 [3, 1, 2, 5, 5]
-#print(mult_pol_mod([4, 1], [1, 1], 7))
-#mult_pol_mod([4, 0, 2, 3, 4, 1, 3, 0, 6, 1, 1, 5, 0, 6, 6, 5, 1], [6, 5, 5, 6, 3, 5, 0, 0, 6, 4, 4, 2, 6, 5, 6, 4, 1], 7)
-#mult_ss_mod([3], [0], 0, 13)
-#print(mult_pol_mod([1, 6, 2, 5, 6], [2, 5, 0, 3, 5], 7)) # [2, 3, 6, 2, 4, 3, 4, 1, 2]
